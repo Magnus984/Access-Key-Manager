@@ -1,7 +1,7 @@
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView
-from .models import IT_Personnel, School, microFocusAdmin
+from .models import IT_Personnel, School, microFocusAdmin, SchoolAccessKey, Access_Key
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.views import LoginView
@@ -10,6 +10,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.forms import PasswordInput
 from django.utils import timezone
+from datetime import timedelta
+import uuid
 
 
 #Authentication Views
@@ -89,7 +91,10 @@ class ITPersonnelDashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Add any necessary data for the IT personnel dashboard
+        school_access_keys = SchoolAccessKey.objects.filter(
+            school=self.request.user.it_personnel.school
+        )
+        context['access_keys'] = [sak.access_key for sak in school_access_keys]
         return context
 
 
@@ -112,25 +117,49 @@ def passwordResetView():
     pass 
 
 #School IT Personnel Views
+"""
 def accessKeyListView():
-    """
     Fetch all Access_Key instances associated with the IT_Personnel's school_id and display them.
-    """
     pass
-
+"""
+"""
 def accessKeyDetailView():
-    """
+
     Fetch a specific Access_Key instance and display its details.
-    """
+
     pass
+"""
 
-
-def accessKeyPurchaseView():
+def accessKeyPurchaseView(request):
     """
     Create a new Access_Key instance associated with the
     IT_Personnel's school_id, but only if there is no active key already assigned to that school_id.
     """
-    pass
+    if request.method == 'GET': 
+        existing_active_key = SchoolAccessKey.objects.filter(
+            school=request.user.it_personnel.school,
+            access_key__status='Active',
+            access_key__expiry_date__gt=timezone.now()
+        ).first()
+
+        if existing_active_key:
+            messages.warning(request, 'Your school already has an active access key.')
+            return redirect('it_personnel_dashboard')
+        
+        new_access_key = Access_Key.objects.create(
+            key=uuid.uuid4(),
+            status='Active',
+            date_of_procurement=timezone.now(),
+            expiry_date=timezone.now() + timedelta(days=365)
+        )
+        SchoolAccessKey.objects.create(
+            school=request.user.it_personnel.school,
+            access_key=new_access_key
+        )
+        messages.success(request, f'New access key purchased: {new_access_key.key}')
+        return redirect('it_personnel_dashboard')
+    else:
+        return HttpResponseBadRequest('Invalid request method')
 
 # Micro-Focus Admin Pages
 def accessKeyListView():
