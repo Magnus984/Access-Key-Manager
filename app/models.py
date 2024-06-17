@@ -2,37 +2,48 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-class IT_Personnel(models.Model):
+class microFocusAdmin(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     email = models.CharField(max_length=30)
-    school_id = models.ForeignKey(
-        School, on_delete=models.CASCADE
-        )
-
-
-class Admin(models.Model):
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
-    email = models.CharField(max_length=30)
+    password = models.CharField(max_length=32, default='passwd')
 
 
 class School(models.Model):
     name = models.CharField(max_length=40)
 
 
+
+class IT_Personnel(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
+    email = models.CharField(max_length=30)
+    password = models.CharField(max_length=32, default='passwd')
+    school_name = models.CharField(max_length=40)
+    school = models.ForeignKey(
+        School, on_delete=models.CASCADE,
+        related_name='personnels'
+        )
+
+
 class Access_Key(models.Model):
     key = models.CharField(max_length=45, unique=True)
-    status = models.TextChoices(
-        'Active', 'revoked', 'expired'
+    status = models.CharField(
+        max_length=10,
+        choices=models.TextChoices('STATUS', 'Active Revoked Expired'),
+        default='Active'
     )
-    date_of_procurement = models.DateTime()
-    expiry_date = models.DateTime()
-    school_id = models.ForeignKey(
-        School, on_delete=models.CASCADE
-    )
+    date_of_procurement = models.DateTimeField()
+    expiry_date = models.DateTimeField()
 
-class Custom_User(User):
-    access_key_id = models.OneToOneField(
-        Access_Key, on_delete = models.CASCADE
-    )
+
+class SchoolAccessKey(models.Model):
+    school = models.ForeignKey(
+        School, on_delete=models.CASCADE, related_name='school_access_keys'
+        )
+    access_key = models.ForeignKey(
+        Access_Key, on_delete=models.CASCADE, related_name='associated_schools'
+        )
+    date_assigned = models.DateTimeField(auto_now_add=True)
