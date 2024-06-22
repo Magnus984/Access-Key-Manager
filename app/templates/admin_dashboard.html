@@ -12,5 +12,36 @@
         {% endif %}
 
         <h1>Admin Dashboard</h1>
+        
+        <div>
+            <h2>All Keys</h2>
+            <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Key</th>
+                    <th>Status</th>
+                    <th>Expiration Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for access_key in access_keys %}
+                  <tr>
+                    <td>{{ access_key.id }}</td>
+                    <td>{{ access_key.key }}</td>
+                    <td>{{ access_key.status }}</td>
+                    <td>{{ access_key.expiry_date }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <hr>
+            <h2>Revoke key here</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ revoke_form.as_p }}
+               <button type="submit">Revoke</button>
+            </form>
     </body>
 </html>
