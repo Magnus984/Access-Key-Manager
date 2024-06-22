@@ -1,17 +1,25 @@
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView
 from .models import IT_Personnel, School, microFocusAdmin, SchoolAccessKey, Access_Key
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.views import LoginView
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.views import LoginView, PasswordResetConfirmView
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.forms import PasswordInput
 from django.utils import timezone
+from django.urls import reverse_lazy, reverse
+from django.core.mail import send_mail
 from datetime import timedelta
 import uuid
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode
+from django import forms
+
 
 
 #Authentication Views
@@ -22,7 +30,7 @@ class ITPersonnelRegisterView(CreateView):
     model = IT_Personnel
     fields = ['first_name', 'last_name', 'email', 'school_name', 'password']
     template_name = 'it_personnel_register.html'
-    #success_url = '/login/'
+    success_url = '/login/'
 
 
     def get_form(self, form_class=None):
@@ -47,6 +55,7 @@ class ITPersonnelRegisterView(CreateView):
         it_personnel = form.save(commit=False)
         it_personnel.user = user
         it_personnel.school = school  # Assign the school object directly
+        it_personnel.set_password(form.cleaned_data['password'])
         it_personnel.save()
         return super().form_valid(form)
 
@@ -85,6 +94,12 @@ class userLoginView(LoginView):
         else:
             return self.form_invalid(form)
 
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reset_form'] = PasswordResetForm()
+        return context
+
 
 class ITPersonnelDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'it_personnel_dashboard.html'
@@ -98,37 +113,106 @@ class ITPersonnelDashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
+class RevokeKeyForm(forms.Form):
+    key_id = forms.IntegerField(label='Key ID')
+
+
 class AdminDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'admin_dashboard.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Add any necessary data for the admin dashboard
+        access_keys = Access_Key.objects.all()
+        context['access_keys'] = access_keys
+        context['revoke_form'] = RevokeKeyForm()
         return context
+
+    def post(self, request):
+        """
+        Update the status of a specific Access_Key instance to "Revoked".
+        """
+        revoke_form = RevokeKeyForm(request.POST)
+        if revoke_form.is_valid():
+            key_id = revoke_form.cleaned_data['key_id']
+            try:
+                access_key = Access_Key.objects.get(id=key_id)
+                access_key.status = 'Revoked'  # Assuming there's a 'status' field
+                access_key.save()
+
+                # Remove association with schools
+                SchoolAccessKey.objects.filter(access_key=access_key).delete()
+
+                messages.success(request, 'Access key has been revoked.')
+            except Access_Key.DoesNotExist:
+                messages.error(request, 'Access key not found.')
+        else:
+            messages.error(request, 'Invalid form submission.')
+        
+        return redirect(reverse('admin_dashboard'))
    
     
 
 
-def passwordResetView():
+def passwordResetView(request):
     """
     Implement a password reset flow,
-    which may involve sending a reset token to the user's email and updating the User password.
+    which may involve sending a reset token to the user's email.
     """
-    pass 
+    if request.method == 'POST':
+        reset_form = PasswordResetForm(request.POST)
+        if reset_form.is_valid():
+            email = reset_form.cleaned_data['email']
+            try:
+                user = User.objects.get(email=email)
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                reset_url = "{}://{}/password-confirm/{}/{}/".format(
+                    request.scheme, request.get_host(), uid, token
+                )
+                
+                context = {
+                    'email': user.email,
+                    'domain': request.get_host(),
+                    'site_name': 'Your Site Name',
+                    'uid': uid,
+                    'user': user,
+                    'token': token,
+                    'protocol': request.scheme,
+                    'reset_url': reset_url,
+                }
 
-#School IT Personnel Views
-"""
-def accessKeyListView():
-    Fetch all Access_Key instances associated with the IT_Personnel's school_id and display them.
-    pass
-"""
-"""
-def accessKeyDetailView():
+                subject = render_to_string('password_reset_subject.txt', {}).strip()
+                email_body = render_to_string('password_reset_email.txt', context)
 
-    Fetch a specific Access_Key instance and display its details.
+                send_mail(
+                    subject,
+                    email_body,
+                    'no@example.com',  # from_email
+                    [user.email],
+                    fail_silently=False,
+                )
+                messages.success(request, "Password reset instructions have been sent to your email.")
+                return redirect('login')
+            except User.DoesNotExist:
+                messages.error(request, "No user found with the provided email address.")
+    else:
+        reset_form = PasswordResetForm()
 
-    pass
-"""
+    return render(request, 'login.html', {'reset_form': reset_form, 'form': AuthenticationForm()})
+
+
+
+class PasswordResetConfirmationView(PasswordResetConfirmView):
+    """Gets new password from user and saves to database"""
+    template_name = 'password_confirm.html'
+    form_class = SetPasswordForm
+    success_url = reverse_lazy('login')
+
+    def form_valid(self, form):
+        # Update the user's password in the database
+        form.save()
+        return super().form_valid(form)
+
 
 def accessKeyPurchaseView(request):
     """
@@ -162,14 +246,13 @@ def accessKeyPurchaseView(request):
         return HttpResponseBadRequest('Invalid request method')
 
 # Micro-Focus Admin Pages
-def accessKeyListView():
+def accessKeyListView(request):
     """
     Fetch all Access_Key instances and display them
     """
-    pass
+    context = {}
+    if request.method == 'GET':
+        access_keys = AccessKey.objects.all()
+        context['access_keys'] = [sak.access_key for sak in access_keys]
+    return render(request, 'admin_dashboard.html', context)
 
-def accessKeyRevokeView():
-    """
-    Update the status of a specific Access_Key instance to "Revoked".
-    """
-    pass
