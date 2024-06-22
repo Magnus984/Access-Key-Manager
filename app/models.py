@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
 
 
 class microFocusAdmin(models.Model):
@@ -7,7 +8,10 @@ class microFocusAdmin(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     email = models.CharField(max_length=30)
-    password = models.CharField(max_length=32, default='passwd')
+    password = models.CharField(max_length=255, default='passwd')
+
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
 
 
 class School(models.Model):
@@ -20,12 +24,16 @@ class IT_Personnel(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     email = models.CharField(max_length=30)
-    password = models.CharField(max_length=32, default='passwd')
+    password = models.CharField(max_length=255, default='passwd')
     school_name = models.CharField(max_length=40)
     school = models.ForeignKey(
         School, on_delete=models.CASCADE,
         related_name='personnels'
         )
+
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
+
 
 
 class Access_Key(models.Model):

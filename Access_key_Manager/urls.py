@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from app.views import ITPersonnelRegisterView, userLoginView, AdminDashboardView, ITPersonnelDashboardView
+from app.views import ITPersonnelRegisterView, userLoginView, AdminDashboardView, ITPersonnelDashboardView, accessKeyPurchaseView
 
 app_name = 'app'
 
@@ -26,4 +26,5 @@ urlpatterns = [
     path('login/', userLoginView.as_view(), name='login'),
     path('admin_dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
     path('it_dashboard/', ITPersonnelDashboardView.as_view(), name='it_personnel_dashboard'),
+    path('purchase-key/', accessKeyPurchaseView, name='accessKeyPurchase'),
 ]
