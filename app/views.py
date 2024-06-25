@@ -28,7 +28,7 @@ class ITPersonnelRegisterView(CreateView):
     Create a new IT_Personnel instance and associate it with a new User instance.
     """
     model = IT_Personnel
-    fields = ['first_name', 'last_name', 'email', 'school_name', 'password']
+    fields = ['first_name', 'last_name', 'email', 'school_email', 'school_name', 'password']
     template_name = 'it_personnel_register.html'
     success_url = '/login/'
 
