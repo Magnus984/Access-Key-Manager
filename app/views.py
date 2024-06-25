@@ -19,9 +19,8 @@ from django.contrib.auth.tokens import default_token_generator
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
 from django import forms
-from rest_framework import serializers, status
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.http import JsonResponse
+from django.views import View
 
 
 
@@ -261,24 +260,30 @@ def accessKeyListView(request):
 
 
 #endpoint
-class SchoolAccessKeySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Access_Key
-        fields = ['id', 'access_key', 'date_assigned']
+class ActiveKeyAPIView(LoginRequiredMixin, View):
 
-
-class KeyCheckView(APIView):
-    def get(self, request, format=None):
-        school_email = request.query_params.get('school_email')
-        if not school_email:
-            return Response({'error': 'School email is required.'}, status=status.HTTP_400_BAD_REQUEST)
-
+    def get(self, request, *args, **kwargs):
+        # Extract email from the query parameters
+        email = request.GET.get('email')
+        if not email:
+            return JsonResponse({'status': 400, 'message': 'Email is required.'}, status=400)
+        
         try:
-            it_personnel = IT_Personnel.objects.get(school_email=school_email)
-            school_access_key = SchoolAccessKey.objects.get(
-                school=it_personnel.school, access_key__status='Active'
+            # Find the school associated with the email
+            school = School.objects.get(personnels__school_email=email)
+            # Find the active access key for the school
+            active_keys = SchoolAccessKey.objects.filter(
+                school=school, access_key__status='Active'
             )
-            serializer = SchoolAccessKeySerializer(school_access_key)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except (IT_Personnel.DoesNotExist, SchoolAccessKey.DoesNotExist):
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            if active_keys.exists():
+                active_key = active_keys.first().access_key
+                return JsonResponse({
+                    'status': 200,
+                    'key': active_key.key,
+                    'date_of_procurement': active_key.date_of_procurement,
+                    'expiry_date': active_key.expiry_date,
+                })
+            else:
+                return JsonResponse({'status': 404, 'message': 'No active key found.'}, status=404)
+        except School.DoesNotExist:
+            return JsonResponse({'status': 404, 'message': 'School not found.'}, status=404)
