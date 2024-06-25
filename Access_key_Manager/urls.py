@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from app.views import ITPersonnelRegisterView, userLoginView, AdminDashboardView, ITPersonnelDashboardView, accessKeyPurchaseView, passwordResetView, PasswordResetConfirmationView
+from app.views import ITPersonnelRegisterView, userLoginView, AdminDashboardView, ITPersonnelDashboardView, accessKeyPurchaseView, passwordResetView, PasswordResetConfirmationView, KeyCheckView
 
 app_name = 'app'
 
@@ -29,4 +29,5 @@ urlpatterns = [
     path('purchase-key/', accessKeyPurchaseView, name='accessKeyPurchase'),
     path('password-reset/', passwordResetView, name='password_reset'),
     path('password-confirm/<uidb64>/<token>/', PasswordResetConfirmationView.as_view(), name='password_confirm'),
+    path('key-check/', views.KeyCheckView.as_view(), name='key-check'),
 ]

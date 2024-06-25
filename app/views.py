@@ -19,6 +19,9 @@ from django.contrib.auth.tokens import default_token_generator
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
 from django import forms
+from rest_framework import serializers, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 
 
@@ -256,3 +259,26 @@ def accessKeyListView(request):
         context['access_keys'] = [sak.access_key for sak in access_keys]
     return render(request, 'admin_dashboard.html', context)
 
+
+#endpoint
+class SchoolAccessKeySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Access_Key
+        fields = ['id', 'access_key', 'date_assigned']
+
+
+class KeyCheckView(APIView):
+    def get(self, request, format=None):
+        school_email = request.query_params.get('school_email')
+        if not school_email:
+            return Response({'error': 'School email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            it_personnel = IT_Personnel.objects.get(school_email=school_email)
+            school_access_key = SchoolAccessKey.objects.get(
+                school=it_personnel.school, access_key__status='Active'
+            )
+            serializer = SchoolAccessKeySerializer(school_access_key)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except (IT_Personnel.DoesNotExist, SchoolAccessKey.DoesNotExist):
+            return Response(status=status.HTTP_404_NOT_FOUND)
