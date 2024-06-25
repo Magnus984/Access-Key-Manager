@@ -29,5 +29,5 @@ urlpatterns = [
     path('purchase-key/', accessKeyPurchaseView, name='accessKeyPurchase'),
     path('password-reset/', passwordResetView, name='password_reset'),
     path('password-confirm/<uidb64>/<token>/', PasswordResetConfirmationView.as_view(), name='password_confirm'),
-    path('key-check/', views.KeyCheckView.as_view(), name='key-check'),
+    path('key-check/', KeyCheckView.as_view(), name='key-check'),
 ]
