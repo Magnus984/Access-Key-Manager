@@ -83,7 +83,7 @@ WSGI_APPLICATION = 'Access_key_Manager.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default="sqlite:///" + os.path.join(BASE_DIR, "db.sqlite3")
+        default=os.getenv('DATABASE_URL')
     )
 }
 
@@ -133,5 +133,5 @@ EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST='smtp.gmail.com'
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
-EMAIL_HOST_USER='tettehmagnus35@gmail.com'
-EMAIL_HOST_PASSWORD='xbxjrtgdtutzhmrz'
+EMAIL_HOST_USER=os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD=os.environ.get("EMAIL_HOST_PASSWORD")

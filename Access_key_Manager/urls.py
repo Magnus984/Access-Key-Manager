@@ -22,7 +22,7 @@ app_name = 'app'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('home/', homepage, name='home'),
+    path('', homepage, name='home'),
     path('register/', ITPersonnelRegisterView.as_view(), name='register'),
     path('login/', userLoginView.as_view(), name='login'),
     path('admin_dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
