@@ -24,6 +24,11 @@ from django.views import View
 
 
 
+
+def homepage(request):
+    return render(request, 'index.html')
+
+
 #Authentication Views
 class ITPersonnelRegisterView(CreateView):
     """
@@ -56,7 +61,7 @@ class ITPersonnelRegisterView(CreateView):
         # Create a new IT_Personnel instance and associate it with the new User and School
         it_personnel = form.save(commit=False)
         it_personnel.user = user
-        it_personnel.school = school  # Assign the school object directly
+        it_personnel.school = school
         it_personnel.set_password(form.cleaned_data['password'])
         it_personnel.save()
         return super().form_valid(form)
@@ -104,6 +109,7 @@ class userLoginView(LoginView):
 
 
 class ITPersonnelDashboardView(LoginRequiredMixin, TemplateView):
+    """View for IT Personnel Dashboard"""
     template_name = 'it_personnel_dashboard.html'
 
     def get_context_data(self, **kwargs):
@@ -120,6 +126,7 @@ class RevokeKeyForm(forms.Form):
 
 
 class AdminDashboardView(LoginRequiredMixin, TemplateView):
+    """View for Admin Dashboard"""
     template_name = 'admin_dashboard.html'
 
     def get_context_data(self, **kwargs):
@@ -189,7 +196,7 @@ def passwordResetView(request):
                 send_mail(
                     subject,
                     email_body,
-                    'no@example.com',  # from_email
+                    'tettehmagnus35@gmail.com',  # from_email
                     [user.email],
                     fail_silently=False,
                 )
