@@ -14,4 +14,4 @@ Check out the live version of the project [here](https://magnus984.pythonanywher
 ## ER Diagram
 Here is the ER diagram representing the database structure of the Access Key Manager:
 
-![ER Diagram](ERD)
+![ER Diagram](/ERD.png)
