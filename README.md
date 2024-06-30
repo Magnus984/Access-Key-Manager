@@ -10,3 +10,8 @@ Check out the live version of the project [here](https://magnus984.pythonanywher
 - Purchase access keys for school accounts.
 - Associate IT personnel with specific schools.
 - Administrator functionalities including revoking keys.
+
+## ER Diagram
+Here is the ER diagram representing the database structure of the Access Key Manager:
+
+![ER Diagram](ERD)
