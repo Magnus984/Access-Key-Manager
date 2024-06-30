@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # Example usage
     create_micro_focus_admin(
         raw_password='admin_password',
-        first_name='Alex',
-        last_name='Rider',
-        email='rideralex35@example.com'
+        first_name='admin_firstname',
+        last_name='admin_lastname',
+        email='admin@example.com'
     )
