@@ -58,6 +58,9 @@ class ITPersonnelRegisterView(CreateView):
     def form_valid(self, form):
         # Create a new User instance
         email = form.cleaned_data['email']
+        if User.objects.filter(email=email).exists():
+            form.add_error('email', 'A user with this email already exists.')
+            return self.form_invalid(form)
         password = self.clean_password(form)
         if form.errors:
             return self.form_invalid(form)

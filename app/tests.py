@@ -2,13 +2,19 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from .models import IT_Personnel, microFocusAdmin, School
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 # Create your tests here.
 class ITPersonnelRegisterViewTestCase(TestCase):
     def test_register_with_existing_email(self):
     # Create a user with the same email as the one we're trying to register
-        User.objects.create_user(username='existing_user', email='jodin999@gmail.com')
-
+        User.objects.create_user(
+            username='existing_user',
+            email='jodin999@gmail.com',
+            password='test_password345!',
+            last_login=timezone.now()
+            )
+        inital_user_count = User.objects.count()
         # Submit the form with the existing email
         response = self.client.post(reverse('register'), {
             'first_name': 'Test',
@@ -18,13 +24,15 @@ class ITPersonnelRegisterViewTestCase(TestCase):
             'school_name': 'Test School',
             'password': 'TestPassword123!',
         })
-        #self.assertFormError(form, 'email', 'I t_ personnel with this Email already exists.')
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('login'))
+        form = response.context['form']
+        self.assertFormError(form, 'email', 'A user with this email already exists.')
+        self.assertEqual(User.objects.count(), inital_user_count)
+        #self.assertEqual(response.status_code, 302)
+        #self.assertRedirects(response, reverse('login'))
 
 
     def test_register_with_weak_password(self):
-    # Submit the form with a weak password
+        # Submit the form with a weak password
         response = self.client.post(reverse('register'), {
             'first_name': 'Test',
             'last_name': 'User',
