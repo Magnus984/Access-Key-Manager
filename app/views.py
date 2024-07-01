@@ -21,6 +21,8 @@ from django.utils.http import urlsafe_base64_encode
 from django import forms
 from django.http import JsonResponse
 from django.views import View
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 
 
@@ -45,12 +47,24 @@ class ITPersonnelRegisterView(CreateView):
         form.fields['password'].widget = PasswordInput()
         return form
 
+    def clean_password(self, form):
+        password = form.cleaned_data.get('password')
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            form.add_error('password', e)
+        return password
+
     def form_valid(self, form):
         # Create a new User instance
+        email = form.cleaned_data['email']
+        password = self.clean_password(form)
+        if form.errors:
+            return self.form_invalid(form)
         user = User.objects.create_user(
             username=form.cleaned_data['email'],
-            email=form.cleaned_data['email'],
-            password=form.cleaned_data['password'],
+            email=email,
+            password=password,
             last_login=timezone.now()
         )
 
@@ -208,7 +222,6 @@ def passwordResetView(request):
         reset_form = PasswordResetForm()
 
     return render(request, 'login.html', {'reset_form': reset_form, 'form': AuthenticationForm()})
-
 
 
 class PasswordResetConfirmationView(PasswordResetConfirmView):

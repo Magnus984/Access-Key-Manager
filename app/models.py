@@ -7,7 +7,7 @@ class microFocusAdmin(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
-    email = models.CharField(max_length=30)
+    email = models.CharField(max_length=30, unique=True)
     password = models.CharField(max_length=255, default='passwd')
 
     def set_password(self, raw_password):
@@ -23,7 +23,7 @@ class IT_Personnel(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
-    email = models.CharField(max_length=30)
+    email = models.CharField(max_length=30, unique=True)
     school_email = models.CharField(max_length=50, default='school_name@gmail.com')
     password = models.CharField(max_length=255, default='passwd')
     school_name = models.CharField(max_length=40)
